@@ -182,12 +182,15 @@ export type CancelBookingInput = z.infer<typeof cancelBookingSchema>;
 // Booking list/filter query params
 // ─────────────────────────────────────────────────────────────
 
+const emptyToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((val) => (val === "" ? undefined : val), schema.optional());
+
 export const bookingFiltersSchema = z.object({
-  status: z.nativeEnum(BookingStatus).optional(),
-  employeeId: z.string().uuid().optional(),
-  roomId: z.string().uuid().optional(),
-  dateFrom: isoDateString.optional(),
-  dateTo: isoDateString.optional(),
+  status: emptyToUndefined(z.nativeEnum(BookingStatus)),
+  employeeId: emptyToUndefined(z.string().uuid()),
+  roomId: emptyToUndefined(z.string().uuid()),
+  dateFrom: emptyToUndefined(isoDateString),
+  dateTo: emptyToUndefined(isoDateString),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

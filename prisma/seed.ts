@@ -1,4 +1,14 @@
-import { PrismaClient, RoomType, RoomStatus, EmployeeRole, EmployeeStatus, BookingStatus, BookingPriority } from "@prisma/client";
+import {
+  PrismaClient,
+  RoomType,
+  RoomStatus,
+  EmployeeRole,
+  EmployeeStatus,
+  BookingStatus,
+  BookingPriority,
+  EmergencyPriority,
+  EmergencyStatus,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -93,20 +103,60 @@ async function main() {
   const startTime = new Date(today.setHours(14, 0, 0, 0));
   const endTime = new Date(today.setHours(15, 30, 0, 0));
 
-  await prisma.booking.create({
-    data: {
-      title: "Sprint Planning & Review",
-      description: "Bi-weekly sprint planning meeting for the core dev team.",
-      startTime,
-      endTime,
-      date: new Date(today.toISOString().split("T")[0]),
-      attendeeCount: 6,
-      priority: BookingPriority.HIGH,
-      status: BookingStatus.CONFIRMED,
-      employeeId: employee.id,
-      roomId: room1.id,
-    },
+  let sampleBooking = await prisma.booking.findFirst({
+    where: { title: "Sprint Planning & Review" },
   });
+
+  if (!sampleBooking) {
+    sampleBooking = await prisma.booking.create({
+      data: {
+        title: "Sprint Planning & Review",
+        description: "Bi-weekly sprint planning meeting for the core dev team.",
+        startTime,
+        endTime,
+        date: new Date(today.toISOString().split("T")[0]),
+        attendeeCount: 6,
+        priority: BookingPriority.HIGH,
+        status: BookingStatus.CONFIRMED,
+        employeeId: employee.id,
+        roomId: room1.id,
+      },
+    });
+  }
+
+  // Seed sample emergency requests if none exist
+  const existingEmergencyCount = await prisma.emergencyRequest.count();
+  if (existingEmergencyCount === 0 && sampleBooking) {
+    await prisma.emergencyRequest.create({
+      data: {
+        subject: "Urgent Client Incident Response Meeting",
+        description: "Critical outage affecting Tier-1 clients requires immediate war room assembly in Innovate Conference Room.",
+        department: "Customer Success / Infrastructure",
+        requestedStartTime: startTime,
+        requestedEndTime: endTime,
+        priority: EmergencyPriority.CRITICAL,
+        status: EmergencyStatus.OPEN,
+        employeeId: admin.id,
+        roomId: room1.id,
+        bookingId: sampleBooking.id,
+      },
+    });
+
+    await prisma.emergencyRequest.create({
+      data: {
+        subject: "Executive Board Briefing",
+        description: "Unscheduled board member briefing regarding Q3 budget alignment.",
+        department: "Executive Management",
+        requestedStartTime: startTime,
+        requestedEndTime: endTime,
+        priority: EmergencyPriority.HIGH,
+        status: EmergencyStatus.IN_REVIEW,
+        employeeId: admin.id,
+        roomId: room2.id,
+        bookingId: sampleBooking.id,
+      },
+    });
+  }
 
   console.log("Database successfully seeded!");
 }

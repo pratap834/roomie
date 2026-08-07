@@ -7,13 +7,12 @@ import { handleApiError, parseJsonBody } from "@/utils/error-handler";
 
 // ─────────────────────────────────────────────────────────────
 // GET /api/bookings
-// Admin-only: lists bookings across all employees. Employees looking for
-// their own bookings should use GET /api/bookings/my instead.
+// Lists bookings across the organization for authenticated employees.
 // ─────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireEmployee();
 
     const params = Object.fromEntries(request.nextUrl.searchParams.entries());
     const filters = bookingFiltersSchema.parse(params);

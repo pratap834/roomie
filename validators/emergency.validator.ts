@@ -220,12 +220,15 @@ export type AdminEmergencyDecisionInput = z.infer<
 // Emergency list/filter query params
 // ─────────────────────────────────────────────────────────────
 
+const emptyToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((val) => (val === "" ? undefined : val), schema.optional());
+
 export const emergencyFiltersSchema = z.object({
-  status: z.nativeEnum(EmergencyStatus).optional(),
-  priority: z.nativeEnum(EmergencyPriority).optional(),
-  employeeId: z.string().uuid().optional(),
-  roomId: z.string().uuid().optional(),
-  bookingId: z.string().uuid().optional(),
+  status: emptyToUndefined(z.nativeEnum(EmergencyStatus)),
+  priority: emptyToUndefined(z.nativeEnum(EmergencyPriority)),
+  employeeId: emptyToUndefined(z.string().uuid()),
+  roomId: emptyToUndefined(z.string().uuid()),
+  bookingId: emptyToUndefined(z.string().uuid()),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

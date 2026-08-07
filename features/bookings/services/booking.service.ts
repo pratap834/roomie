@@ -9,7 +9,7 @@ import type { CancelBookingInput, CreateBookingInput } from "@/validators/bookin
 export const bookingService = {
   list(params: BookingListParams = {}): Promise<PaginatedResult<BookingWithRelations>> {
     return apiRequest<PaginatedResult<BookingWithRelations>>(
-      `/api/admin/bookings${buildQueryString(params)}`,
+      `/api/bookings${buildQueryString(params)}`,
     );
   },
 

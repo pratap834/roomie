@@ -26,7 +26,7 @@ export interface ResolveEmergencyResult {
 export const emergencyService = {
   list(params: EmergencyListParams = {}): Promise<PaginatedResult<EmergencyRequestWithRelations>> {
     return apiRequest<PaginatedResult<EmergencyRequestWithRelations>>(
-      `/api/admin/emergency${buildQueryString(params)}`,
+      `/api/emergency${buildQueryString(params)}`,
     );
   },
 
