@@ -11,6 +11,7 @@ export interface IEmployeeRepository {
   findByEmail(email: string): Promise<Employee | null>;
   findMany(params: FindManyEmployeesParams): Promise<{ items: Employee[]; total: number }>;
   create(data: CreateEmployeeData): Promise<Employee>;
+  upsert(clerkId: string, create: CreateEmployeeData, update: UpdateEmployeeData): Promise<Employee>;
   update(id: string, data: UpdateEmployeeData): Promise<Employee>;
   softDelete(id: string): Promise<Employee>;
   existsByEmail(email: string): Promise<boolean>;
@@ -113,6 +114,24 @@ export class EmployeeRepository implements IEmployeeRepository {
     return prisma.employee.create({ data });
   }
 
+  /**
+   * Atomically inserts or updates an employee record keyed by clerkId.
+   * Safe to call concurrently — Prisma maps this to a single ON CONFLICT upsert,
+   * so two simultaneous first-time sign-ins for the same user will never race
+   * to create() and hit the unique constraint.
+   */
+  async upsert(
+    clerkId: string,
+    create: CreateEmployeeData,
+    update: UpdateEmployeeData,
+  ): Promise<Employee> {
+    return prisma.employee.upsert({
+      where: { clerkId },
+      create,
+      update,
+    });
+  }
+
   async update(id: string, data: UpdateEmployeeData): Promise<Employee> {
     return prisma.employee.update({
       where: { id },
@@ -135,8 +154,10 @@ export class EmployeeRepository implements IEmployeeRepository {
   }
 
   async existsByClerkId(clerkId: string): Promise<boolean> {
+    // NOTE: intentionally no deletedAt filter — the DB @unique constraint on
+    // clerkId is absolute (not a partial index), so we must check all rows.
     const count = await prisma.employee.count({
-      where: { clerkId, deletedAt: null },
+      where: { clerkId },
     });
     return count > 0;
   }

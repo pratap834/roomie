@@ -16,10 +16,9 @@ const envSchema = z.object({
   RESEND_FROM_NAME: z.string().min(1, "RESEND_FROM_NAME is required"),
 
   // Application
+  // NOTE: NODE_ENV is managed by Next.js/Vercel and must NOT be listed here.
+  // Reading it via process.env.NODE_ENV directly is always safe.
   NEXT_PUBLIC_APP_URL: z.string().url("NEXT_PUBLIC_APP_URL must be a valid URL"),
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
 
   // Admin
   ADMIN_USER_IDS: z.string().min(1, "ADMIN_USER_IDS is required"),

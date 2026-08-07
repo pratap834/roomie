@@ -35,6 +35,7 @@ export async function requireClerkUser(): Promise<NonNullable<ClerkUser>> {
 export async function requireEmployee(): Promise<Employee> {
   const userId = await requireAuth();
 
+  // Fast path: employee already linked to this Clerk user ID.
   let employee = await employeeRepository.findByClerkId(userId);
 
   if (!employee) {
@@ -42,27 +43,34 @@ export async function requireEmployee(): Promise<Employee> {
     const primaryEmail = clerkUser?.emailAddresses?.[0]?.emailAddress?.toLowerCase();
 
     if (primaryEmail) {
-      employee = await employeeRepository.findByEmail(primaryEmail);
       const isAdminEmail = primaryEmail === "pratapsubramani@gmail.com";
 
-      if (employee) {
-        employee = await employeeRepository.update(employee.id, {
-          clerkId: userId,
-          ...(isAdminEmail ? { role: "ADMIN" } : {}),
-        });
-      } else {
-        employee = await employeeRepository.create({
+      // Atomically insert or update: safe under concurrent first-time sign-ins.
+      // If two requests race here, the second will see the clerkId already taken
+      // and update instead of create, avoiding the unique-constraint crash.
+      employee = await employeeRepository.upsert(
+        userId,
+        // create — used when no row with this clerkId exists yet
+        {
           clerkId: userId,
           email: primaryEmail,
           firstName: clerkUser?.firstName || primaryEmail.split("@")[0],
           lastName: clerkUser?.lastName || "User",
           role: isAdminEmail ? "ADMIN" : "EMPLOYEE",
           status: "ACTIVE",
-        });
-      }
+        },
+        // update — used when a row with this clerkId already exists
+        // (e.g., a soft-deleted record, or a record created by a concurrent request)
+        {
+          email: primaryEmail,
+          ...(isAdminEmail ? { role: "ADMIN" as const } : {}),
+        },
+      );
     }
   }
 
+  // Ensure the hardcoded admin email always holds the ADMIN role,
+  // even if the record was created before the email was designated as admin.
   if (employee && employee.email?.toLowerCase() === "pratapsubramani@gmail.com" && employee.role !== "ADMIN") {
     employee = await employeeRepository.update(employee.id, { role: "ADMIN" });
   }
