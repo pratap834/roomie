@@ -47,6 +47,8 @@ export interface FindManyEmergencyParams {
   bookingId?: string;
   /** Restricts results to requests raised against bookings owned by this employee. */
   bookingOwnerId?: string;
+  /** Restricts results to requests where employee is requester OR booking owner. */
+  userRelatedId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -139,6 +141,7 @@ export class EmergencyRepository implements IEmergencyRepository {
       roomId,
       bookingId,
       bookingOwnerId,
+      userRelatedId,
       page = 1,
       pageSize = 20,
     } = params;
@@ -150,6 +153,12 @@ export class EmergencyRepository implements IEmergencyRepository {
       ...(roomId && { roomId }),
       ...(bookingId && { bookingId }),
       ...(bookingOwnerId && { booking: { employeeId: bookingOwnerId } }),
+      ...(userRelatedId && {
+        OR: [
+          { employeeId: userRelatedId },
+          { booking: { employeeId: userRelatedId } },
+        ],
+      }),
     };
 
     const [items, total] = await prisma.$transaction([

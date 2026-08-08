@@ -229,6 +229,7 @@ export const emergencyFiltersSchema = z.object({
   employeeId: emptyToUndefined(z.string().uuid()),
   roomId: emptyToUndefined(z.string().uuid()),
   bookingId: emptyToUndefined(z.string().uuid()),
+  scope: emptyToUndefined(z.enum(["my_requests", "incoming", "all"])),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

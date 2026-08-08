@@ -20,16 +20,22 @@ import {
   type EmergencyListState,
 } from "@/features/emergency/types/emergency-list-state";
 
+import { useUser } from "@clerk/nextjs";
+
 export default function EmergencyRequestsPage() {
   usePageBreadcrumbs([
     { label: "Dashboard", href: "/dashboard" },
     { label: "Emergency requests" },
   ]);
 
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === "ADMIN";
+
   const [filters, setFilters] = React.useState<EmergencyListState>(DEFAULT_EMERGENCY_LIST_STATE);
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
 
   const { data, isLoading, isFetching, isError, refetch } = useEmergencyRequests({
+    scope: filters.scope,
     status: filters.status === "ALL" ? undefined : filters.status,
     priority: filters.priority === "ALL" ? undefined : filters.priority,
     page: filters.page,
@@ -58,7 +64,7 @@ export default function EmergencyRequestsPage() {
 
       <Card className="p-4">
         <div className="space-y-3">
-          <EmergencyFilters state={filters} onChange={setFilters} />
+          <EmergencyFilters state={filters} onChange={setFilters} isAdmin={isAdmin} />
 
           {isError ? (
             <ErrorState

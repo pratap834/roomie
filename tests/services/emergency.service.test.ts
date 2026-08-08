@@ -252,6 +252,48 @@ describe("EmergencyService", () => {
     });
   });
 
+  describe("listRequestsForUser", () => {
+    it("filters by requester employeeId when scope is my_requests", async () => {
+      vi.mocked(emergencyRepository.findMany).mockResolvedValue({
+        items: [mockEmergencyRequest as any],
+        total: 1,
+      });
+
+      const result = await emergencyService.listRequestsForUser(
+        "employee-123",
+        { scope: "my_requests", page: 1, pageSize: 20 },
+        false,
+      );
+
+      expect(result.ok).toBe(true);
+      expect(emergencyRepository.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          employeeId: "employee-123",
+        }),
+      );
+    });
+
+    it("filters by bookingOwnerId when scope is incoming", async () => {
+      vi.mocked(emergencyRepository.findMany).mockResolvedValue({
+        items: [mockEmergencyRequest as any],
+        total: 1,
+      });
+
+      const result = await emergencyService.listRequestsForUser(
+        "employee-123",
+        { scope: "incoming", page: 1, pageSize: 20 },
+        false,
+      );
+
+      expect(result.ok).toBe(true);
+      expect(emergencyRepository.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bookingOwnerId: "employee-123",
+        }),
+      );
+    });
+  });
+
   describe("adminDecide", () => {
     it("rejects if emergency request does not exist", async () => {
       vi.mocked(emergencyRepository.findById).mockResolvedValue(null);

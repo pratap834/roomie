@@ -21,10 +21,11 @@ export async function GET(request: NextRequest) {
     const params = Object.fromEntries(request.nextUrl.searchParams.entries());
     const filters = emergencyFiltersSchema.parse(params);
 
-    const result =
-      employee.role === "ADMIN"
-        ? await emergencyService.listRequests(filters)
-        : await emergencyService.listRequestsForOwner(employee.id, filters);
+    const result = await emergencyService.listRequestsForUser(
+      employee.id,
+      filters,
+      employee.role === "ADMIN",
+    );
 
     if (!result.ok) {
       return handleApiError(new Error(result.code));

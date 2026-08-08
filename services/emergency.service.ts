@@ -87,6 +87,11 @@ export interface IEmergencyService {
     ownerId: string,
     filters: EmergencyFiltersInput,
   ): Promise<ServiceResult<PaginatedResult<EmergencyRequestWithRelations>>>;
+  listRequestsForUser(
+    userId: string,
+    filters: EmergencyFiltersInput,
+    isAdmin: boolean,
+  ): Promise<ServiceResult<PaginatedResult<EmergencyRequestWithRelations>>>;
   getRequestById(
     id: string,
     requesterId: string,
@@ -257,6 +262,58 @@ export class EmergencyService implements IEmergencyService {
       };
     } catch (error) {
       log.error("Failed to list emergency requests for owner", error);
+      return {
+        ok: false,
+        error: "Failed to retrieve emergency requests",
+        code: "INTERNAL_ERROR",
+      };
+    }
+  }
+
+  async listRequestsForUser(
+    userId: string,
+    filters: EmergencyFiltersInput,
+    isAdmin: boolean,
+  ): Promise<ServiceResult<PaginatedResult<EmergencyRequestWithRelations>>> {
+    try {
+      const page = filters.page ?? 1;
+      const pageSize = filters.pageSize ?? 20;
+      const scope = filters.scope ?? (isAdmin ? "all" : "my_requests");
+
+      let employeeId: string | undefined;
+      let bookingOwnerId: string | undefined;
+      let userRelatedId: string | undefined;
+
+      if (scope === "my_requests") {
+        employeeId = userId;
+      } else if (scope === "incoming") {
+        bookingOwnerId = userId;
+      } else if (scope === "all") {
+        if (!isAdmin) {
+          userRelatedId = userId;
+        }
+      } else {
+        userRelatedId = userId;
+      }
+
+      const { items, total } = await emergencyRepository.findMany({
+        status: filters.status,
+        priority: filters.priority,
+        employeeId: filters.employeeId ?? employeeId,
+        roomId: filters.roomId,
+        bookingId: filters.bookingId,
+        bookingOwnerId,
+        userRelatedId,
+        page,
+        pageSize,
+      });
+
+      return {
+        ok: true,
+        data: { items, meta: buildPaginationMeta(total, page, pageSize) },
+      };
+    } catch (error) {
+      log.error("Failed to list emergency requests for user", error);
       return {
         ok: false,
         error: "Failed to retrieve emergency requests",

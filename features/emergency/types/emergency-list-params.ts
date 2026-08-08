@@ -6,6 +6,7 @@ export interface EmergencyListParams {
   employeeId?: string;
   roomId?: string;
   bookingId?: string;
+  scope?: "my_requests" | "incoming" | "all";
   page?: number;
   pageSize?: number;
 }
