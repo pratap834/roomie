@@ -126,7 +126,7 @@ export interface BookingFilters {
 
 export type EmployeeSummary = Pick<
   Employee,
-  "id" | "firstName" | "lastName" | "email" | "department"
+  "id" | "firstName" | "lastName" | "email" | "department" | "clerkId"
 >;
 
 export type RoomSummary = Pick<

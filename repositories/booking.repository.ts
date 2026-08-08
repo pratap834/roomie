@@ -83,6 +83,8 @@ export interface UpdateBookingData {
   attendeeCount?: number;
   priority?: BookingPriority;
   notes?: string;
+  /** Reassign the booking to a different employee (e.g. after emergency approval). */
+  employeeId?: string;
 }
 
 export interface AddHistoryData {
@@ -233,6 +235,7 @@ export class BookingRepository implements IBookingRepository {
         ...(data.attendeeCount !== undefined && { attendeeCount: data.attendeeCount }),
         ...(data.priority !== undefined && { priority: data.priority }),
         ...(data.notes !== undefined && { notes: data.notes }),
+        ...(data.employeeId !== undefined && { employeeId: data.employeeId }),
       },
     });
   }

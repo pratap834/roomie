@@ -863,6 +863,28 @@ export class EmergencyService implements IEmergencyService {
         });
 
         if (existing.bookingId) {
+          if (status === "APPROVED") {
+            // Reassign the booking to the emergency requester
+            const requester = await tx.employee.findUnique({
+              where: { id: existing.employeeId },
+              select: { firstName: true, lastName: true },
+            });
+
+            const currentBooking = await tx.booking.findUnique({
+              where: { id: existing.bookingId },
+              select: { title: true },
+            });
+
+            const newTitle = requester
+              ? `${requester.firstName} ${requester.lastName} — ${currentBooking?.title ?? "Booking"}`
+              : currentBooking?.title ?? "Booking";
+
+            await bookingRepository.update(tx, existing.bookingId, {
+              employeeId: existing.employeeId,
+              title: newTitle,
+            });
+          }
+
           await bookingRepository.addHistory(tx, {
             bookingId: existing.bookingId,
             action: input.decision === "APPROVE" ? "APPROVED" : "REJECTED",

@@ -81,6 +81,7 @@ export interface UpdateEmergencyStatusData {
 
 const employeeSelect = {
   id: true,
+  clerkId: true,
   firstName: true,
   lastName: true,
   email: true,
