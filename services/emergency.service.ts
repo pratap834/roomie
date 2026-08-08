@@ -5,6 +5,7 @@ import type {
   EmergencyStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
 import { bookingRepository } from "@/repositories/booking.repository";
 import {
   emergencyRepository,
@@ -111,6 +112,12 @@ export interface IEmergencyService {
     id: string,
     input: AdminEmergencyDecisionInput,
     adminId: string,
+  ): Promise<ServiceResult<EmergencyRequest>>;
+  decideRequest(
+    id: string,
+    input: AdminEmergencyDecisionInput,
+    actorId: string,
+    isAdminActor: boolean,
   ): Promise<ServiceResult<EmergencyRequest>>;
 }
 
@@ -791,6 +798,15 @@ export class EmergencyService implements IEmergencyService {
     input: AdminEmergencyDecisionInput,
     adminId: string,
   ): Promise<ServiceResult<EmergencyRequest>> {
+    return this.decideRequest(id, input, adminId, true);
+  }
+
+  async decideRequest(
+    id: string,
+    input: AdminEmergencyDecisionInput,
+    actorId: string,
+    isAdminActor: boolean,
+  ): Promise<ServiceResult<EmergencyRequest>> {
     try {
       const existing = await emergencyRepository.findById(id);
 
@@ -799,6 +815,16 @@ export class EmergencyService implements IEmergencyService {
           ok: false,
           error: "Emergency request not found",
           code: "EMERGENCY_NOT_FOUND",
+        };
+      }
+
+      const isOwner = existing.booking?.employeeId === actorId;
+
+      if (!isAdminActor && !isOwner) {
+        return {
+          ok: false,
+          error: "Only the booking owner or an admin may decide this request",
+          code: "FORBIDDEN",
         };
       }
 
@@ -830,8 +856,8 @@ export class EmergencyService implements IEmergencyService {
 
         const result = await emergencyRepository.updateStatus(tx, id, {
           status,
-          resolution: input.resolution,
-          decidedById: adminId,
+          resolution: input.resolution ?? (input.decision === "APPROVE" ? "Request approved" : "Request rejected"),
+          decidedById: actorId,
           decidedAt: now,
           resolvedAt: now,
         });
@@ -840,22 +866,22 @@ export class EmergencyService implements IEmergencyService {
           await bookingRepository.addHistory(tx, {
             bookingId: existing.bookingId,
             action: input.decision === "APPROVE" ? "APPROVED" : "REJECTED",
-            actorId: adminId,
+            actorId,
             note: input.resolution,
-            metadata: { emergencyRequestId: id, decidedBy: "ADMIN" },
+            metadata: { emergencyRequestId: id, decidedBy: isAdminActor ? "ADMIN" : "OWNER" },
           });
         }
 
         return result;
       });
 
-      log.info("Emergency request decided by admin", {
+      log.info("Emergency request decided", {
         id,
         decision: input.decision,
-        adminId,
+        actorId,
+        isOwner,
+        isAdmin: isAdminActor,
       });
-
-      await this.notifyAdminDecision(id, input, status);
 
       return { ok: true, data: updated };
     } catch (error) {
@@ -865,7 +891,7 @@ export class EmergencyService implements IEmergencyService {
       log.error("Failed to decide emergency request", error);
       return {
         ok: false,
-        error: "Failed to update emergency request",
+        error: "Failed to decide emergency request",
         code: "INTERNAL_ERROR",
       };
     }
@@ -886,6 +912,15 @@ export class EmergencyService implements IEmergencyService {
 
       const booking = await loadBookingEmailContext(request.bookingId);
       if (!booking) return;
+
+      console.log(
+        `\n📧 [Emergency Request Notification]\n` +
+        `   Recipient (Booking Owner): ${booking.organizer.firstName} ${booking.organizer.lastName} (${booking.organizer.email})\n` +
+        `   Requester: ${request.employee.firstName} ${request.employee.lastName} (${request.employee.email})\n` +
+        `   Room: ${booking.room.name}\n` +
+        `   Subject: ${request.subject}\n` +
+        `   Review Link: ${env.NEXT_PUBLIC_APP_URL}/emergency/${request.id}\n`,
+      );
 
       emailService.sendEmergencyRequest({
         emergency: toEmergencyEmailContext(request),

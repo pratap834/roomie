@@ -42,7 +42,7 @@ export const emergencyService = {
   },
 
   decide(id: string, input: AdminEmergencyDecisionInput): Promise<EmergencyRequest> {
-    return apiRequest<EmergencyRequest>(`/api/admin/emergency/${id}/decision`, {
+    return apiRequest<EmergencyRequest>(`/api/emergency/${id}/decision`, {
       method: "POST",
       body: input,
     });

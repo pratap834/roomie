@@ -12,14 +12,14 @@ export function AvailableActionsPanel({ requestId }: { requestId: string }) {
       <CardContent className="space-y-4 pt-0">
         <div>
           <p className="mb-2 text-xs text-muted-foreground">
-            Record a gatekeeping decision on the request itself.
+            Approve or reject this emergency request.
           </p>
           <DecisionActions requestId={requestId} />
         </div>
         <Separator />
         <div>
           <p className="mb-2 text-xs text-muted-foreground">
-            Or resolve the underlying booking directly, on the owner&apos;s behalf.
+            Or resolve with a specific accommodation (room transfer, reschedule, or duration reduction).
           </p>
           <ResolveActions requestId={requestId} />
         </div>

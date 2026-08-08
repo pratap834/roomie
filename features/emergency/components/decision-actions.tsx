@@ -64,8 +64,9 @@ export function DecisionActions({ requestId }: { requestId: string }) {
               {pendingDecision === "APPROVE" ? "Approve this request" : "Reject this request"}
             </DialogTitle>
             <DialogDescription>
-              This records your decision on the request itself. It does not change the
-              booking — use the resolve actions below for that.
+              {pendingDecision === "APPROVE"
+                ? "Approve this emergency override request for your room."
+                : "Decline this emergency override request to keep your existing room booking."}
             </DialogDescription>
           </DialogHeader>
 
