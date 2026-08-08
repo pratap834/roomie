@@ -1,8 +1,7 @@
 "use client";
 
 import { useClerk, useUser } from "@clerk/nextjs";
-import { LogOut, Settings, User } from "lucide-react";
-import Link from "next/link";
+import { LogOut, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,7 +27,7 @@ function initials(name: string | null | undefined, email: string | null | undefi
 
 export function UserMenu() {
   const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const { signOut, openUserProfile } = useClerk();
 
   if (!isLoaded) {
     return <Skeleton className="h-7 w-7 rounded-full" />;
@@ -55,17 +54,9 @@ export function UserMenu() {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/settings">
-            <User className="h-4 w-4" />
-            Profile
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/settings">
-            <Settings className="h-4 w-4" />
-            Settings
-          </Link>
+        <DropdownMenuItem onSelect={() => openUserProfile()}>
+          <User className="h-4 w-4" />
+          Profile
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { AlertTriangle, CalendarDays, DoorOpen, LayoutGrid, Settings } from "lucide-react";
+import { AlertTriangle, CalendarDays, DoorOpen, LayoutGrid } from "lucide-react";
 
 export interface NavItem {
   label: string;
@@ -12,5 +12,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Rooms", href: "/rooms", icon: DoorOpen },
   { label: "Bookings", href: "/bookings", icon: CalendarDays },
   { label: "Emergency requests", href: "/emergency", icon: AlertTriangle },
-  { label: "Settings", href: "/settings", icon: Settings },
 ];
+

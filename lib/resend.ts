@@ -25,14 +25,15 @@ if (!RESEND_KEY || RESEND_KEY.trim() === "") {
   );
 }
 
-// Warn if using a free email provider — Resend requires a verified custom domain.
 const FROM_EMAIL = env.RESEND_FROM_EMAIL.toLowerCase();
 const FREE_EMAIL_DOMAINS = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "icloud.com"];
-if (process.env.NODE_ENV === "production" && FREE_EMAIL_DOMAINS.some((d) => FROM_EMAIL.endsWith(`@${d}`))) {
+const isFreeDomain = FREE_EMAIL_DOMAINS.some((d) => FROM_EMAIL.endsWith(`@${d}`));
+
+if (isFreeDomain) {
   console.warn(
     `⚠️  [Resend] RESEND_FROM_EMAIL is set to "${env.RESEND_FROM_EMAIL}" (a free email provider). ` +
-    "Resend requires a verified custom domain for production sending. " +
-    "See https://resend.com/docs/dashboard/domains/introduction",
+    "Resend requires a verified custom domain for custom sender addresses. " +
+    "Defaulting sender to onboarding@resend.dev for Resend sandbox compatibility.",
   );
 }
 
@@ -52,6 +53,9 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export const emailDefaults = {
-  from: `${env.RESEND_FROM_NAME} <${env.RESEND_FROM_EMAIL}>`,
+  from: isFreeDomain
+    ? `${env.RESEND_FROM_NAME} <onboarding@resend.dev>`
+    : `${env.RESEND_FROM_NAME} <${env.RESEND_FROM_EMAIL}>`,
 } as const;
+
 

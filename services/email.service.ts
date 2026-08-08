@@ -252,16 +252,29 @@ async function dispatch(params: DispatchParams): Promise<void> {
       await emailLogRepository.markSent(logId, data?.id ?? null);
     }
 
-    log.info("Email sent", { type: params.type, to: params.to.email });
+    log.info("Email sent successfully", { type: params.type, to: params.to.email, resendId: data?.id });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    log.error("Failed to send email", { type: params.type, message });
+    log.error("Failed to send email via Resend", {
+      type: params.type,
+      to: params.to.email,
+      subject: params.subject,
+      error: message,
+    });
+
+    if (message.includes("API key is invalid") || message.includes("invalid")) {
+      console.error(
+        `\n❌ [EmailService Failure] Could not deliver "${params.type}" email to owner (${params.to.email}).\n` +
+        `   Reason: Resend API key is invalid or expired.\n` +
+        `   Fix: Update RESEND_API_KEY in your .env file with a valid key from https://resend.com/api-keys\n`,
+      );
+    }
 
     if (logId) {
       try {
         await emailLogRepository.markFailed(logId, message);
       } catch (logError) {
-        log.error("Failed to record email failure", logError);
+        log.error("Failed to record email failure in database", logError);
       }
     }
   }
